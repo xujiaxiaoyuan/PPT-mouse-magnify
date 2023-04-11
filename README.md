@@ -1,2 +1,3 @@
 # PPT-mouse-magnify
 PPT利用鼠标放大内容。。
+通过订阅Application.WindowSelectionChange事件来监测鼠标在PPT窗口内的位置变化并创建一个放大镜窗口来显示鼠标当前位置周围的区域。放大镜窗口的大小和位置在构造函数中设置，在窗口上绘制的图像则是通过截取鼠标所在位置的屏幕图像来实现的。同时订阅了PowerPoint.Application.PresentationWindowDeactivate事件来在鼠标离开PPT窗口时隐藏放大镜窗口并释放资源。
