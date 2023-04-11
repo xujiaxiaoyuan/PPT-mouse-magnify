@@ -1,0 +1,73 @@
+using System;
+using System.Drawing;
+using System.Windows.Forms;
+using Microsoft.Office.Core;
+using PowerPoint = Microsoft.Office.Interop.PowerPoint;
+
+namespace MyAddIn
+{
+    public partial class ThisAddIn
+    {
+        private PowerPoint.Application _app;
+
+        private void ThisAddIn_Startup(object sender, EventArgs e)
+        {
+            _app = Globals.ThisAddIn.Application;
+            _app.WindowSelectionChange += App_WindowSelectionChange;
+        }
+
+        private void App_WindowSelectionChange(PowerPoint.Selection sel)
+        {
+            // 获取鼠标当前位置
+            Point mousePos = Cursor.Position;
+
+            // 将鼠标位置转换为PPT窗口坐标
+            mousePos = _app.ActiveWindow.PointsToScreenPixels(mousePos);
+
+            // 创建放大镜窗口
+            MagnifierForm magnifierForm = new MagnifierForm(mousePos);
+            magnifierForm.Show();
+
+            // 隐藏放大镜窗口并释放资源，当鼠标离开PPT窗口时
+            _app.PresentationWindowDeactivate += () =>
+            {
+                magnifierForm.Hide();
+                magnifierForm.Dispose();
+            };
+        }
+
+        private void ThisAddIn_Shutdown(object sender, EventArgs e)
+        {
+            _app.WindowSelectionChange -= App_WindowSelectionChange;
+        }
+    }
+
+    public class MagnifierForm : Form
+    {
+        private readonly PictureBox _pictureBox;
+
+        public MagnifierForm(Point location)
+        {
+            // 设置放大镜窗口大小和位置
+            this.StartPosition = FormStartPosition.Manual;
+            this.Location = new Point(location.X + 20, location.Y + 20);
+            this.Size = new Size(200, 200);
+            this.FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            this.ShowInTaskbar = false;
+
+            // 创建放大镜图像框并设置其属性
+            _pictureBox = new PictureBox();
+            _pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
+            _pictureBox.Dock = DockStyle.Fill;
+            this.Controls.Add(_pictureBox);
+
+            // 截取鼠标所在位置的屏幕图像
+            Bitmap bitmap = new Bitmap(200, 200, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            Graphics g = Graphics.FromImage(bitmap);
+            g.CopyFromScreen(location.X - 100, location.Y - 100, 0, 0, new Size(200, 200), CopyPixelOperation.SourceCopy);
+
+            // 显示截图
+            _pictureBox.Image = bitmap;
+        }
+    }
+}
